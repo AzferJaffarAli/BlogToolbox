@@ -1,0 +1,4 @@
+Streamlit
+LangChain
+Sumy
+TextBlob
