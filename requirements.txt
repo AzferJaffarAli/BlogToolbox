@@ -4,3 +4,4 @@ CTransformers
 LangChain
 Sumy
 TextBlob
+gdown
