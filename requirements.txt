@@ -4,6 +4,3 @@ CTransformers
 LangChain
 Sumy
 TextBlob
-PlaintextParser
-LsaSummarizer
-Tokenizer
