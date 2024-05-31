@@ -1,5 +1,9 @@
 Streamlit
 langchain_community
+CTransformers
 LangChain
 Sumy
 TextBlob
+PlaintextParser
+LsaSummarizer
+Tokenizer
