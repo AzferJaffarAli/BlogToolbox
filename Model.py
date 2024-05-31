@@ -1,4 +1,5 @@
 import streamlit as st
+import gdown
 from langchain.prompts import PromptTemplate
 from langchain.llms import CTransformers
 from sumy.parsers.plaintext import PlaintextParser
@@ -11,7 +12,7 @@ st.set_option('deprecation.showPyplotGlobalUse', False)
 
 def download_model():
     # URL of the model file on Google Drive
-    url = "https://drive.google.com/file/d/1kAUPxTk9Cfja54p7v_OQqPgzbqOIJIpm/view?usp=drive_link"
+    url = "https://drive.google.com/uc?id=1kAUPxTk9Cfja54p7v_OQqPgzbqOIJIpm"
 
     # Output path where the model file will be saved
     output_path = "llama-2-7b-chat.ggmlv3.q8_0.bin"
@@ -50,9 +51,8 @@ def analyze_sentiment(text):
     else:
         return "Neutral"
 
-st.set_page_config(page_title="Generate Blogs",
-                    page_icon='🤖',
-                    layout='wide')
+# Download the model file from Google Drive
+download_model()
 
 # Custom CSS for black background and white text
 st.markdown(
