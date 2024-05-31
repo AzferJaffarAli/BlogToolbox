@@ -9,19 +9,29 @@ from textblob import TextBlob
 # Disable the warning for pyplot global use
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
-def getLLamaresponse(input_text, no_words, blog_style):
+def download_model():
+    # URL of the model file on Google Drive
+    url = "https://drive.google.com/file/d/1kAUPxTk9Cfja54p7v_OQqPgzbqOIJIpm/view?usp=drive_link"
+
+    # Output path where the model file will be saved
+    output_path = "llama-2-7b-chat.ggmlv3.q8_0.bin"
+
+    # Download the model file
+    gdown.download(url, output_path, quiet=False)
+
+def getLLamaresponse(input_text, no_words, blog_style, formality, language):
     llm = CTransformers(
-        model='C:\\Users\\Azfer\\Downloads\\llama-2-7b-chat.ggmlv3.q8_0.bin',
+        model='llama-2-7b-chat.ggmlv3.q8_0.bin',
         model_type='llama',
         config={'max_new_tokens': 256, 'temperature': 0.01}
     )
     template = """
-        Write a blog for {blog_style} job profile for a topic {input_text}
-        within {no_words} words.
+        Write a {formality} blog for {blog_style} job profile for a topic {input_text}
+        within {no_words} words in {language}.
     """
-    prompt = PromptTemplate(input_variables=["blog_style", "input_text", "no_words"],
+    prompt = PromptTemplate(input_variables=["formality", "blog_style", "input_text", "no_words", "language"],
                             template=template)
-    response = llm(prompt.format(blog_style=blog_style, input_text=input_text, no_words=no_words))
+    response = llm(prompt.format(formality=formality, blog_style=blog_style, input_text=input_text, no_words=no_words, language=language))
     return response
 
 def text_summarization(text):
@@ -44,6 +54,19 @@ st.set_page_config(page_title="Generate Blogs",
                     page_icon='🤖',
                     layout='wide')
 
+# Custom CSS for black background and white text
+st.markdown(
+    """
+    <style>
+        body {
+            color: white;
+            background-color: black;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Sidebar
 st.sidebar.title("Blog Toolbox")
 
@@ -53,8 +76,10 @@ def generate_blog():
     input_text = st.text_input("Enter the Blog Topic")
     no_words = st.text_input("Number of Words")
     blog_style = st.selectbox("Writing the blog for", ('Researchers', 'Data Scientist', 'Common People'), index=0)
+    formality = st.selectbox("Select Formality", ('Casual', 'Professional', 'Fun'))
+    language = st.selectbox("Select Language", ('English', 'Spanish', 'French', 'German', 'Chinese', 'Russian', 'Italian'))
     if st.button("Generate"):
-        response = getLLamaresponse(input_text, no_words, blog_style)
+        response = getLLamaresponse(input_text, no_words, blog_style, formality, language)
         st.write(response)
 
 # Function for text summarization
