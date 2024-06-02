@@ -1,5 +1,3 @@
-Certainly! This project is a Streamlit web application called "Blog Toolbox" designed to assist users in various tasks related to blog content creation. Here's a description of the project:
-
 ### Project Name: Blog Toolbox
 
 ### Purpose:
