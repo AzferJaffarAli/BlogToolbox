@@ -166,13 +166,21 @@ selected_tool = st.sidebar.radio("Select Tool", tool_options)
 
 # Display selected tool description
 st.sidebar.markdown(f"**{tool_titles[selected_tool]}**")
+st.sidebar.markdown("### Description")  # Added description title
 st.sidebar.markdown(tool_descriptions[selected_tool])
+
+# Add additional elements below the description
+st.sidebar.markdown("### About")
+st.sidebar.markdown("This application helps you generate blogs, summarize text, analyze sentiment, and manage your content calendar.")
+
+st.sidebar.markdown("### Contact")
+st.sidebar.markdown("For more information, contact us at: info@blogtoolbox.com")
 
 # Main content area
 if selected_tool == "Generate Blogs":
     st.subheader("Generate Content For Blogs")
-    input_text = st.text_input("Enter the Blog Topic")
-    no_words = st.text_input("Number of Words")
+    input_text = st.text_input("Enter the Blog Topic", max_chars=100)
+    no_words = st.text_input("Number of Words", max_chars=5)
     blog_styles = ('Researchers', 'Data Scientist', 'Common People')
     blog_style = st.selectbox("Writing the blog for", blog_styles, format_func=lambda x: x, index=0)
     if st.button("Generate"):
@@ -186,7 +194,7 @@ if selected_tool == "Generate Blogs":
 
 elif selected_tool == "Text Summarization":
     st.subheader("Text Summarization")
-    text_to_summarize = st.text_area("Enter text to summarize:")
+    text_to_summarize = st.text_area("Enter text to summarize:", height=200, max_chars=1000)
     if st.button("Summarize"):
         with st.spinner("Summarizing text..."):
             summary = text_summarization(text_to_summarize)
@@ -194,7 +202,7 @@ elif selected_tool == "Text Summarization":
 
 elif selected_tool == "Sentiment Analysis":
     st.subheader("Sentiment Analysis")
-    text_for_sentiment = st.text_area("Enter text for sentiment analysis:")
+    text_for_sentiment = st.text_area("Enter text for sentiment analysis:", height=200, max_chars=1000)
     if st.button("Analyze Sentiment"):
         with st.spinner("Analyzing sentiment..."):
             sentiment = analyze_sentiment(text_for_sentiment)
@@ -202,7 +210,7 @@ elif selected_tool == "Sentiment Analysis":
 
 elif selected_tool == "Content Idea Generator":
     st.subheader("Content Idea Generator")
-    topic = st.text_input("Enter the topic for content ideas")
+    topic = st.text_input("Enter the topic for content ideas", max_chars=50)
     if st.button("Generate Ideas"):
         with st.spinner("Generating ideas..."):
             ideas = generate_content_ideas(topic)
@@ -214,7 +222,7 @@ elif selected_tool == "Content Calendar":
     st.subheader("Content Calendar")
     st.write("Plan your content with a publication schedule.")
     
-    new_content_idea = st.text_input("New Content Idea")
+    new_content_idea = st.text_input("New Content Idea", max_chars=50)
     publication_date = st.date_input("Publication Date", datetime.date.today())
     
     if st.button("Add to Calendar"):
