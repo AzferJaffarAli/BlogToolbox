@@ -66,6 +66,19 @@ custom_css = """
     .option-description {
       margin-bottom: 10px;
     }
+    .content-header {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    .input-section {
+      margin-bottom: 1.5rem;
+    }
+    .related-keywords {
+      margin-top: 1.5rem;
+      font-style: italic;
+      color: #666;
+    }
   </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -179,16 +192,25 @@ st.sidebar.markdown("For more information, contact us at: info@blogtoolbox.com")
 # Main content area
 if selected_tool == "Generate Blogs":
     st.subheader("Generate Content For Blogs")
-    input_text = st.text_input("Enter the Blog Topic", max_chars=100)
-    no_words = st.text_input("Number of Words", max_chars=5)
-    blog_styles = ('Researchers', 'Data Scientist', 'Common People')
-    blog_style = st.selectbox("Writing the blog for", blog_styles, format_func=lambda x: x, index=0)
+    st.markdown("<div class='content-header'>Generate a Blog Post</div>", unsafe_allow_html=True)
+    
+    input_col, words_col = st.columns([3, 1])
+    with input_col:
+        input_text = st.text_input("Enter the Blog Topic", max_chars=100, placeholder="e.g., Data Science Trends")
+    with words_col:
+        no_words = st.text_input("Number of Words", max_chars=5, placeholder="e.g., 500")
+    
+    blog_style = st.selectbox("Writing the blog for", ('Researchers', 'Data Scientist', 'Common People'), index=0)
+    
     if st.button("Generate"):
         with st.spinner("Generating blog..."):
             response = getLLamaresponse(input_text, no_words, blog_style)
-            st.write(response)
+            st.markdown("<div class='input-section'>", unsafe_allow_html=True)
+            st.text_area("Generated Blog", response, height=200)
+            st.markdown("</div>", unsafe_allow_html=True)
+        
         if input_text:
-            st.subheader("Related Keywords")
+            st.markdown("<div class='related-keywords'>Related Keywords:</div>", unsafe_allow_html=True)
             keywords = get_related_keywords(input_text)
             st.write(", ".join(keywords))
 
