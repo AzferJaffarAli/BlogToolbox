@@ -7,12 +7,14 @@ from sumy.summarizers.lsa import LsaSummarizer
 from textblob import TextBlob
 import nltk
 from nltk.corpus import wordnet
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 import pandas as pd
 import datetime
 
 # Download NLTK resources
 nltk.download('wordnet')
 nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
 
 # Set page configuration
 st.set_page_config(
@@ -90,7 +92,7 @@ def getLLamaresponse(input_text, no_words, blog_style):
     llm = CTransformers(
         model='C:\\Users\\Azfer\\Downloads\\llama-2-7b-chat.ggmlv3.q8_0.bin',
         model_type='llama',
-        config={'max_new_tokens': 256, 'temperature': 0.01}
+        config={'max_new_tokens': 512, 'temperature': 0.01}
     )
     template = """
         Write a blog for {blog_style} job profile for a topic {input_text}
@@ -98,7 +100,8 @@ def getLLamaresponse(input_text, no_words, blog_style):
     """
     prompt = PromptTemplate(input_variables=["blog_style", "input_text", "no_words"],
                             template=template)
-    response = llm.prompt(prompt.format(blog_style=blog_style, input_text=input_text, no_words=no_words))
+    formatted_prompt = prompt.format(blog_style=blog_style, input_text=input_text, no_words=no_words)
+    response = llm(formatted_prompt)
     return response
 
 def text_summarization(text):
@@ -130,19 +133,26 @@ def get_related_keywords(text):
     return list(related_keywords)
 
 def generate_content_ideas(topic):
-    ideas = [
-        f"10 Tips for {topic}",
-        f"How to Improve Your {topic} Skills",
-        f"The Future of {topic}: Trends to Watch",
-        f"Beginner's Guide to {topic}",
-        f"Top 5 Tools for {topic}",
-        f"Common Mistakes in {topic} and How to Avoid Them",
-        f"Expert Interviews: Insights on {topic}",
-        f"Case Studies in {topic}",
-        f"The Benefits of {topic}",
-        f"Advanced Techniques in {topic}"
-    ]
-    return ideas
+    llm = CTransformers(
+        model='C:\\Users\\Azfer\\Downloads\\llama-2-7b-chat.ggmlv3.q8_0.bin',
+        model_type='llama',
+        config={'max_new_tokens': 512, 'temperature': 0.01}
+    )
+    template = """
+        Generate 10 unique and creative content ideas for a blog topic on {topic}.
+    """
+    prompt = PromptTemplate(input_variables=["topic"], template=template)
+    formatted_prompt = prompt.format(topic=topic)
+    response = llm(formatted_prompt)
+    ideas = response.split('\n')
+    return [idea.strip() for idea in ideas if idea.strip()]
+
+def calculate_bleu(reference, hypothesis):
+    reference = [reference.split()]
+    hypothesis = hypothesis.split()
+    smoothing_function = SmoothingFunction().method1
+    bleu_score = sentence_bleu(reference, hypothesis, smoothing_function=smoothing_function)
+    return bleu_score
 
 # Initialize session state for content calendar
 if "content_calendar" not in st.session_state:
@@ -161,7 +171,8 @@ tool_descriptions = {
     "Text Summarization": "Summarize lengthy texts into shorter, concise versions.",
     "Sentiment Analysis": "Analyze the sentiment of texts to determine positivity, negativity, or neutrality.",
     "Content Idea Generator": "Get creative ideas for generating content.",
-    "Content Calendar": "Organize and manage your content publishing schedule."
+    "Content Calendar": "Organize and manage your content publishing schedule.",
+    "Model Evaluation": "Evaluate the model's accuracy using BLEU score."
 }
 
 # Titles for each option
@@ -170,7 +181,8 @@ tool_titles = {
     "Text Summarization": "Text Summarization",
     "Sentiment Analysis": "Sentiment Analysis",
     "Content Idea Generator": "Content Idea Generator",
-    "Content Calendar": "Content Calendar"
+    "Content Calendar": "Content Calendar",
+    "Model Evaluation": "Model Evaluation"
 }
 
 # Display descriptions and radio buttons
@@ -216,7 +228,7 @@ if selected_tool == "Generate Blogs":
 
 elif selected_tool == "Text Summarization":
     st.subheader("Text Summarization")
-    text_to_summarize = st.text_area("Enter text to summarize:", height=200, max_chars=1000)
+    text_to_summarize = st.text_area("Enter text to summarize:", height=200)
     if st.button("Summarize"):
         with st.spinner("Summarizing text..."):
             summary = text_summarization(text_to_summarize)
@@ -224,7 +236,7 @@ elif selected_tool == "Text Summarization":
 
 elif selected_tool == "Sentiment Analysis":
     st.subheader("Sentiment Analysis")
-    text_for_sentiment = st.text_area("Enter text for sentiment analysis:", height=200, max_chars=1000)
+    text_for_sentiment = st.text_area("Enter text for sentiment analysis:", height=200)
     if st.button("Analyze Sentiment"):
         with st.spinner("Analyzing sentiment..."):
             sentiment = analyze_sentiment(text_for_sentiment)
@@ -257,3 +269,24 @@ elif selected_tool == "Content Calendar":
     if st.button("Clear Calendar"):
         st.session_state["content_calendar"] = st.session_state["content_calendar"].iloc[0:0]
         st.write("Calendar cleared.")
+
+elif selected_tool == "Model Evaluation":
+    st.subheader("Model Evaluation")
+    st.write("Evaluate the model's accuracy using BLEU score.")
+    
+    # Assuming you have a test dataset
+    test_data = pd.DataFrame({
+        'input': ['Data Science Trends', 'AI in Healthcare', 'Future of Robotics'],
+        'expected_output': [
+            'Expected blog text about Data Science Trends...',
+            'Expected blog text about AI in Healthcare...',
+            'Expected blog text about the Future of Robotics...'
+        ]
+    })
+    
+    if st.button("Evaluate Model"):
+        with st.spinner("Evaluating model..."):
+            test_data['generated_output'] = test_data['input'].apply(lambda x: getLLamaresponse(x, 500, 'Researchers'))
+            test_data['bleu_score'] = test_data.apply(lambda row: calculate_bleu(row['expected_output'], row['generated_output']), axis=1)
+            average_bleu_score = test_data['bleu_score'].mean()
+            st.write(f"Average BLEU Score: {average_bleu_score:.4f}")
