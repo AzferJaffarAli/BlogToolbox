@@ -18,7 +18,7 @@ nltk.download('averaged_perceptron_tagger')
 
 # Set page configuration
 st.set_page_config(
-    page_title="Generate Blogs",
+    page_title="Blog Toolbox",
     page_icon='🤖',
     layout='wide',
     initial_sidebar_state='expanded'
@@ -104,21 +104,30 @@ def getLLamaresponse(input_text, no_words, blog_style):
     response = llm(formatted_prompt)
     return response
 
-def text_summarization(text):
+def text_summarization(text, reduction_ratio):
+    original_length = len(text.split())
+    target_length = int(original_length * (reduction_ratio / 100))
+    
     parser = PlaintextParser.from_string(text, Tokenizer("english"))
     summarizer = LsaSummarizer()
-    summary = summarizer(parser.document, sentences_count=3)
+    summary = summarizer(parser.document, sentences_count=target_length)
     return " ".join(str(sentence) for sentence in summary)
 
 def analyze_sentiment(text):
     blob = TextBlob(text)
     sentiment_score = blob.sentiment.polarity
+    
     if sentiment_score > 0:
-        return "Positive"
+        sentiment = "Positive"
+        comments = "Great! Your text has a positive sentiment."
     elif sentiment_score < 0:
-        return "Negative"
+        sentiment = "Negative"
+        comments = "Uh-oh! Your text has a negative sentiment."
     else:
-        return "Neutral"
+        sentiment = "Neutral"
+        comments = "Hmm. Your text has a neutral sentiment."
+    
+    return sentiment, sentiment_score, comments
 
 def get_related_keywords(text):
     tokens = nltk.word_tokenize(text)
@@ -157,6 +166,10 @@ def calculate_bleu(reference, hypothesis):
 # Initialize session state for content calendar
 if "content_calendar" not in st.session_state:
     st.session_state["content_calendar"] = pd.DataFrame(columns=["Content Idea", "Publication Date"])
+
+# Initialize session state for sentiment analysis results
+if "sentiment_results" not in st.session_state:
+    st.session_state["sentiment_results"] = pd.DataFrame(columns=["Text", "Sentiment", "Sentiment Score"])
 
 # Add headers and subheaders
 st.title("Blog Toolbox")
@@ -229,18 +242,35 @@ if selected_tool == "Generate Blogs":
 elif selected_tool == "Text Summarization":
     st.subheader("Text Summarization")
     text_to_summarize = st.text_area("Enter text to summarize:", height=200)
+    reduction_ratio = st.slider("Reduction Ratio (%)", min_value=10, max_value=90, value=30, step=10)
+    
     if st.button("Summarize"):
         with st.spinner("Summarizing text..."):
-            summary = text_summarization(text_to_summarize)
+            summary = text_summarization(text_to_summarize, reduction_ratio)
             st.write("Summary:", summary)
 
 elif selected_tool == "Sentiment Analysis":
     st.subheader("Sentiment Analysis")
     text_for_sentiment = st.text_area("Enter text for sentiment analysis:", height=200)
+    
     if st.button("Analyze Sentiment"):
-        with st.spinner("Analyzing sentiment..."):
-            sentiment = analyze_sentiment(text_for_sentiment)
-            st.write("Sentiment:", sentiment)
+        if text_for_sentiment.strip() == "":
+            st.error("Please enter some text for sentiment analysis.")
+        else:
+            with st.spinner("Analyzing sentiment..."):
+                sentiment, sentiment_score, comments = analyze_sentiment(text_for_sentiment)
+                st.markdown("### Sentiment Analysis Results")
+                st.markdown(f"**Sentiment:** {sentiment}")
+                st.markdown(f"**Sentiment Score:** {sentiment_score:.2f}")
+                st.markdown(f"**Comments:** {comments}")
+                
+                # Update session state with results
+                new_entry = pd.DataFrame([[text_for_sentiment, sentiment, sentiment_score]], columns=["Text", "Sentiment", "Sentiment Score"])
+                st.session_state["sentiment_results"] = pd.concat([st.session_state["sentiment_results"], new_entry], ignore_index=True)
+                
+                # Display historical sentiment analysis results
+                st.markdown("### Historical Sentiment Analysis Results")
+                st.dataframe(st.session_state["sentiment_results"])
 
 elif selected_tool == "Content Idea Generator":
     st.subheader("Content Idea Generator")
@@ -290,3 +320,4 @@ elif selected_tool == "Model Evaluation":
             test_data['bleu_score'] = test_data.apply(lambda row: calculate_bleu(row['expected_output'], row['generated_output']), axis=1)
             average_bleu_score = test_data['bleu_score'].mean()
             st.write(f"Average BLEU Score: {average_bleu_score:.4f}")
+
